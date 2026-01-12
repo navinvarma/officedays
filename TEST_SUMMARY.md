@@ -1,4 +1,4 @@
-# Office Day Tracker - Unit Test Summary
+# Office Days - Unit Test Summary
 
 ## 🧪 Test Coverage Overview
 
@@ -229,7 +229,7 @@ npm run test:ci       # Run tests for CI/CD pipeline
 
 ## 🎉 Summary
 
-The comprehensive test suite provides 100% coverage of the Office Day Tracker's enhanced functionality:
+The comprehensive test suite provides 100% coverage of the Office Days enhanced functionality:
 
 ✅ **Date Logging**: Complete flow from date selection to calendar event creation
 ✅ **Past Events**: Retrieval and display of historical office day data  

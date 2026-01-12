@@ -248,7 +248,7 @@ export default function MainScreen() {
                 allDay: true,
                 timeZone: 'UTC', // Use UTC to avoid timezone conversion issues
                 location: 'Office',
-                notes: 'Logged via Office Day Tracker app',
+                notes: 'Logged via Office Days app',
             });
 
             // If logging for today, update the today status
@@ -464,7 +464,7 @@ export default function MainScreen() {
                 >
                     <Text style={styles.menuButtonText}>☰</Text>
                 </TouchableOpacity>
-                <Text style={styles.title} testID="header-title">Office Day Tracker</Text>
+                <Text style={styles.title} testID="header-title">Office Days</Text>
                 <View style={styles.placeholder} />
             </View>
 

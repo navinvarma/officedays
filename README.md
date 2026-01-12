@@ -1,53 +1,104 @@
-# Office Day Tracker 📅
+# Office Days 📅
 
-A mobile application built with React Native and Expo for tracking office attendance with calendar integration, event management, and comprehensive attendance statistics.
-
-## 📊 Repository Stats
-
-[![GitHub stars](https://img.shields.io/github/stars/navinvarma/officedaytracker?style=social)](https://github.com/navinvarma/officedaytracker/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/navinvarma/officedaytracker?style=social)](https://github.com/navinvarma/officedaytracker/network/members)
-[![GitHub issues](https://img.shields.io/github/issues/navinvarma/officedaytracker)](https://github.com/navinvarma/officedaytracker/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/navinvarma/officedaytracker)](https://github.com/navinvarma/officedaytracker/pulls)
-[![GitHub license](https://img.shields.io/github/license/navinvarma/officedaytracker)](https://github.com/navinvarma/officedaytracker/blob/main/LICENSE)
-
-[![React Native](https://img.shields.io/badge/React%20Native-0.73.0-blue.svg)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-SDK%2053-000000.svg)](https://expo.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Jest](https://img.shields.io/badge/Jest-29.7.0-green.svg)](https://jestjs.io/)
-
-**⭐ Star this repo if you find it helpful!**
+A personal, non-commercial open-source mobile application built with React Native and Expo for tracking office attendance with calendar integration, event management, and comprehensive attendance statistics.
 
 ## 📋 Table of Contents
 
-- [✨ Features](#-features) • [📸 Screenshots](#-screenshots) • [🚀 Quick Start](#-quick-start) • [🧪 Testing](#-testing) • [🛠️ Tech Stack](#️-tech-stack) • [📄 License](#-license)
+- [✨ Features](#-features) • [📸 Screenshots](#-screenshots) • [🚀 Building Locally](#-building-locally) • [📱 Installing on Your Phone](#-installing-on-your-phone) • [🧪 Testing](#-testing) • [🛠️ Tech Stack](#️-tech-stack) • [📄 License](#-license) • [🔒 Privacy](#-privacy)
 
 ## 🎯 Project Overview
 
-**Office Day Tracker** is a modern React Native mobile application that transforms how you track your office attendance. Built with the latest Expo SDK and TypeScript, it features a beautiful calendar interface, comprehensive statistics, and seamless calendar integration.
+**Office Days** is a modern React Native mobile application that helps you track your office attendance. Built with Expo SDK and TypeScript, it features a calendar interface, comprehensive statistics, and seamless calendar integration.
+
+This is a **personal, non-commercial open-source project**. All data is stored locally on your device and the app operates entirely offline.
 
 ### Key Features
 - Custom calendar widget with date selection
 - Calendar integration for event storage
 - Past event management with delete functionality
-- **Enhanced Statistics with Period Analysis**
-- **Configurable Quarter Definitions**
-- **Historical Data Analysis**
+- Enhanced Statistics with Period Analysis
+- Configurable Quarter Definitions
+- Historical Data Analysis
 - Real-time calendar highlighting
 
-## 🚀 Getting Started
+## 🚀 Building Locally
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Expo CLI (`npm install -g expo-cli`)
+- [Expo Go app](https://expo.dev/client) on your mobile device (for development)
+- Android Studio (for building Android APK)
+- Xcode (for building iOS app, macOS only)
+
+### Setup
 
 ```bash
-# Quick setup
-git clone https://github.com/navinvarma/officedaytracker.git
-cd officedaytracker
+# Clone the repository
+git clone https://github.com/navinvarma/officedays.git
+cd officedays
+
+# Install dependencies
 npm install
+
+# Start the development server
 npx expo start
+```
 
-# Run tests
-npm test
+Scan the QR code with Expo Go to run the app on your device during development.
 
-# Build for production
-eas build --platform all
+## 📱 Installing on Your Phone
+
+### Building an Android APK with Expo
+
+To create an APK file that you can install directly on your Android device:
+
+1. **Install EAS CLI** (if not already installed):
+   ```bash
+   npm install -g eas-cli
+   ```
+
+2. **Login to Expo**:
+   ```bash
+   eas login
+   ```
+
+3. **Configure EAS Build** (if not already configured):
+   ```bash
+   eas build:configure
+   ```
+
+4. **Build Android APK**:
+   ```bash
+   eas build --platform android --profile preview
+   ```
+   
+   Or for a production build:
+   ```bash
+   eas build --platform android
+   ```
+
+5. **Download and Install**:
+   - Once the build completes, EAS will provide a download link
+   - Download the APK file to your Android device
+   - Enable "Install from unknown sources" in your Android settings
+   - Open the APK file and install
+
+### Alternative: Local Build with Expo
+
+You can also build locally using Expo's build tools:
+
+```bash
+# Build Android APK locally
+npx expo build:android -t apk
+```
+
+### Building for iOS
+
+For iOS, you'll need an Apple Developer account:
+
+```bash
+eas build --platform ios
 ```
 
 ## ✨ Features
@@ -64,7 +115,7 @@ eas build --platform all
 - **📅 Historical Access**: Navigate and log office days for the past 6 months
 - **⚡ Modern UI**: Clean interface with smooth animations and modal navigation
 
-### 🆕 New Enhanced Statistics Features
+### 🆕 Enhanced Statistics Features
 
 #### **Period Type Selection**
 - **Month**: Analyze specific months with detailed working days calculation
@@ -98,40 +149,15 @@ The screenshots demonstrate:
 - **Historical Period Analysis**
 - Menu navigation and modal interactions
 
-*Screenshots captured during late-night development sessions using Expo Go on Android.*
+## 🏗️ Development Story
 
-## 🚀 Quick Start
-
-**Prerequisites**: Node.js 18+, npm, and [Expo Go app](https://expo.dev/client) on your mobile device
-
-### 📱 Android Beta Download
-
-**Ready to test?** Download the Android beta APK directly:
-
-**[⬇️ Download Android Beta APK](https://expo.dev/artifacts/eas/owQRQCQnaYDVdCmuXSAD1B.apk)**
-
-*Install the APK on your Android device to experience the full Office Day Tracker with enhanced statistics features!*
-
-### 🛠️ Development Setup
-
-```bash
-git clone https://github.com/navinvarma/officedaytracker.git
-cd officedaytracker
-npm install
-npx expo start
-```
-
-Scan the QR code with Expo Go, grant calendar permissions, and start logging your office days! 🎉
+Built as a fun weekend project using React Native, Expo, and Cursor AI assistance. The result? A fully-featured office tracking app with **comprehensive statistics and historical analysis** completed in just a few hours of focused coding - demonstrating how AI tooling can amplify human creativity and productivity! 🚀
 
 ## 📱 Manual Testing
 
 **Core Features**: Log office days → Check calendar integration → Test date picker navigation → View past events → **Test Enhanced Statistics** → **Configure Quarters** → **Analyze Historical Periods** → Verify calendar highlighting
 
 **Edge Cases**: Test permission denial, network issues, date boundaries, duplicate logging scenarios, **quarter configuration changes**, **period type switching**
-
-## 🏗️ Development Story
-
-Built as a fun weekend project using React Native, Expo, and Cursor AI assistance. The result? A fully-featured office tracking app with **comprehensive statistics and historical analysis** completed in just a few hours of focused coding - demonstrating how AI tooling can amplify human creativity and productivity! 🚀
 
 ## 🧪 Testing
 
@@ -177,9 +203,12 @@ Fork → Create feature branch → Add tests → Submit PR
 
 ## 📄 License
 
-**GNU General Public License v3.0** - Free software with copyleft requirements. See [LICENSE](LICENSE) for details.
+**Apache License 2.0** - See [LICENSE](LICENSE) for details.
+
+## 🔒 Privacy
+
+Office Days is a free, offline application. All data is stored locally on your device. We do not collect, store, or transmit any personal data. See [PRIVACY.md](PRIVACY.md) for more information.
 
 ---
 
 **Built with ❤️ using Cursor AI** - This project demonstrates the power of combining human creativity with AI assistance for rapid, high-quality development. What will you build next? 🚀
-

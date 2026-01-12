@@ -1,13 +1,13 @@
 # 📸 Screenshots
 
-This page showcases the Office Day Tracker app in action through screenshots taken during development and testing.
+This page showcases the Office Days app in action through screenshots taken during development and testing.
 
 ## 📱 App Screenshots
 
 ### 1. Enhanced Main Screen - Modern Interface
 <img src="screenshots/Screenshot_20250904_150805_Office Day Tracker.jpg" alt="Enhanced Main Screen - Modern Interface" width="300">
 
-**Description:** The updated main screen featuring the modern Office Day Tracker interface with the prominent statistics icon (📊), clean design, and improved user experience. Shows the primary logging interface with date selection and office day tracking functionality.
+**Description:** The updated main screen featuring the modern Office Days interface with the prominent statistics icon (📊), clean design, and improved user experience. Shows the primary logging interface with date selection and office day tracking functionality.
 
 ### 2. Enhanced Statistics Dashboard - Period Selection
 <img src="screenshots/Screenshot_20250904_150811_Office Day Tracker.jpg" alt="Enhanced Statistics Dashboard - Period Selection" width="300">
@@ -65,7 +65,7 @@ The September 4th screenshots showcase the app's evolution into a comprehensive 
 ### 8. Main Screen - Initial State
 <img src="screenshots/Screenshot_20250830_004430_Expo Go.jpg" alt="Main Screen - Initial State" width="300">
 
-**Description:** The main screen of the Office Day Tracker app showing the primary interface with the "Log Office Day" button and date selector.
+**Description:** The main screen of the Office Days app showing the primary interface with the "Log Office Day" button and date selector.
 
 ### 9. Date Picker Interface
 <img src="screenshots/Screenshot_20250830_004440_Expo Go.jpg" alt="Date Picker Interface" width="300">
@@ -125,7 +125,7 @@ The current version includes significantly enhanced statistics capabilities:
 
 ## 🎯 Features Demonstrated
 
-These screenshots showcase the comprehensive functionality of the Office Day Tracker:
+These screenshots showcase the comprehensive functionality of the Office Days:
 
 1. ✅ **Modern Main Interface** - Clean, intuitive design with prominent statistics icon
 2. ✅ **Enhanced Statistics Dashboard** - Period type selection (Month/Quarter/Year)

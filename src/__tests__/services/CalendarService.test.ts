@@ -81,7 +81,7 @@ describe('CalendarService', () => {
                 allDay: true,
                 timeZone: 'UTC',
                 location: 'Office',
-                notes: 'Logged via Office Day Tracker app',
+                notes: 'Logged via Office Days app',
                 alarms: [],
                 recurrenceRule: undefined,
                 availability: Calendar.Availability.BUSY,
@@ -274,7 +274,7 @@ describe('CalendarService', () => {
                 allDay: true,
                 title: 'Office Day',
                 location: 'Office',
-                notes: 'Logged via Office Day Tracker app'
+                notes: 'Logged via Office Days app'
             }));
         });
     });

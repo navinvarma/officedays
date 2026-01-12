@@ -48,7 +48,7 @@ export class CalendarService {
                 allDay: true,
                 timeZone: 'UTC', // Use UTC to avoid timezone conversion issues
                 location: 'Office',
-                notes: 'Logged via Office Day Tracker app',
+                notes: 'Logged via Office Days app',
                 alarms: [],
                 recurrenceRule: undefined,
                 availability: Calendar.Availability.BUSY,
