@@ -1,4 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PeriodStats, QuarterConfig, StatisticsPeriod } from '../types';
+
+const QUARTER_CONFIG_KEY = '@quarter_config';
 
 export class StatisticsService {
     // Default quarter configuration (standard calendar year)
@@ -10,17 +13,33 @@ export class StatisticsService {
     };
 
     /**
-     * Get the quarter configuration
+     * Get the quarter configuration (in-memory)
      */
     static getQuarterConfig(): QuarterConfig {
         return this.defaultQuarterConfig;
     }
 
     /**
-     * Set custom quarter configuration
+     * Load quarter configuration from AsyncStorage
      */
-    static setQuarterConfig(config: QuarterConfig): void {
+    static async loadQuarterConfig(): Promise<QuarterConfig> {
+        try {
+            const stored = await AsyncStorage.getItem(QUARTER_CONFIG_KEY);
+            if (stored) {
+                this.defaultQuarterConfig = JSON.parse(stored);
+            }
+        } catch {}
+        return this.defaultQuarterConfig;
+    }
+
+    /**
+     * Set custom quarter configuration and persist to AsyncStorage
+     */
+    static async setQuarterConfig(config: QuarterConfig): Promise<void> {
         this.defaultQuarterConfig = config;
+        try {
+            await AsyncStorage.setItem(QUARTER_CONFIG_KEY, JSON.stringify(config));
+        } catch {}
     }
 
     /**

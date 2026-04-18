@@ -86,11 +86,7 @@ export default function MainScreen() {
 
     const fetchCalendars = async () => {
         const all = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-        // Use only the local device calendar for reads and writes
-        const local = all.filter(cal =>
-            cal.source?.isLocalAccount || cal.source?.type === 'local'
-        );
-        calendarsRef.current = local.length > 0 ? local : all;
+        calendarsRef.current = all;
         return calendarsRef.current;
     };
 
@@ -162,7 +158,7 @@ export default function MainScreen() {
 
             const endDate = new Date();
             const startDate = new Date();
-            startDate.setMonth(startDate.getMonth() - 6);
+            startDate.setFullYear(startDate.getFullYear() - 2);
 
             const events = await Calendar.getEventsAsync(
                 calendarIds,

@@ -8,6 +8,7 @@ import { renderWithTheme } from '../testUtils';
 jest.mock('../../services/StatisticsService', () => ({
     StatisticsService: {
         getQuarterConfig: jest.fn(),
+        loadQuarterConfig: jest.fn(),
         getAvailableYears: jest.fn(),
         getAvailableMonths: jest.fn(),
         calculateMonthStats: jest.fn(),
@@ -51,6 +52,8 @@ describe('StatisticsScreen', () => {
 
         // Setup default mocks
         mockStatisticsService.getQuarterConfig.mockReturnValue(mockQuarterConfig);
+        mockStatisticsService.loadQuarterConfig.mockResolvedValue(mockQuarterConfig);
+        mockStatisticsService.setQuarterConfig.mockResolvedValue(undefined);
         mockStatisticsService.getAvailableYears.mockReturnValue([2025, 2024]);
         mockStatisticsService.getAvailableMonths.mockReturnValue([0, 1, 2, 7]); // Jan, Feb, Mar, Aug
         mockStatisticsService.calculateMonthStats.mockReturnValue(mockPeriodStats);

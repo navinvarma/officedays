@@ -45,6 +45,13 @@ export default function StatisticsScreen({ pastOfficeDays, pastTimeOffDays, onBa
     const [quarterConfig, setQuarterConfig] = useState<QuarterConfig>(StatisticsService.getQuarterConfig());
 
     useEffect(() => {
+        StatisticsService.loadQuarterConfig().then(config => {
+            setQuarterConfig(config);
+            recalculateStats();
+        });
+    }, []);
+
+    useEffect(() => {
         recalculateStats();
     }, [pastOfficeDays]);
 
