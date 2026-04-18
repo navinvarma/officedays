@@ -15,11 +15,15 @@ This is a **personal, non-commercial open-source project**. All data is stored l
 ### Key Features
 - Custom calendar widget with date selection
 - Calendar integration for event storage
+- Log office days and time off (vacation, sick, bereavement, etc.)
+- Time off excluded from attendance percentage calculation
 - Past event management with delete functionality
 - Enhanced Statistics with Period Analysis
 - Configurable Quarter Definitions
 - Historical Data Analysis
 - Real-time calendar highlighting
+- Three theme options (Light, Dark, Sand)
+- Daily reminder notifications
 
 ## 🚀 Building Locally
 
@@ -103,36 +107,29 @@ eas build --platform ios
 
 ## ✨ Features
 
-- **🗓️ Smart Calendar Widget**: Interactive monthly calendar with date selection and visual indicators
-- **📱 One-Tap Logging**: Log office days directly to your default calendar with timezone handling
-- **📊 Enhanced Statistics Dashboard**: 
-  - **Current Month Statistics**: Track working days vs. office days with attendance percentage
+- **🗓️ Smart Calendar Widget**: Interactive monthly calendar with color-coded indicators for today, office days, and time off
+- **📱 One-Tap Logging**: Log office days or time off directly to your default calendar with timezone handling
+- **🏖️ Time Off Tracking**: Log vacation, sick days, bereavement, or any absence — automatically excluded from attendance calculations
+- **📊 Statistics Dashboard**: 
+  - **Attendance Percentage**: `Office Days / (Working Days - Time Off) × 100%` — time off doesn't penalize your rate
   - **Period Analysis**: View statistics for any month, quarter, or year
-  - **Configurable Quarters**: Customize which months belong to Q1, Q2, Q3, Q4
+  - **Configurable Quarters**: Customize which months belong to Q1, Q2, Q3, Q4 (supports non-standard fiscal years)
   - **Historical Data**: Analyze attendance patterns across different time periods
-- **🗂️ Past Event Management**: View, navigate, and delete previously logged office days
-- **🎨 Real-time Updates**: Calendar highlighting updates immediately after logging
-- **📅 Historical Access**: Navigate and log office days for the past 6 months
-- **⚡ Modern UI**: Clean interface with smooth animations and modal navigation
+  - **Color-coded stat cards**: Working days, office days, time off (amber), and attendance (green)
+- **🗂️ Past Event Management**: Combined list of office days and time off with delete support
+- **🎨 Theme System**: Light, Dark, and Sand themes with glass morphism, gradient backgrounds, and theme-aware shadows
+- **🔔 Reminder Notifications**: Configurable daily reminders with day-of-week and time selection
+- **📅 Historical Access**: Navigate and log events for the past 6 months
 
-### 🆕 Enhanced Statistics Features
+### Statistics Details
 
-#### **Period Type Selection**
-- **Month**: Analyze specific months with detailed working days calculation
-- **Quarter**: View quarterly statistics with configurable month groupings
-- **Year**: Get annual overview of attendance patterns
+#### **Attendance Formula**
+Time off reduces the denominator, not the numerator. If a month has 22 working days, 3 time off days, and 10 office days: `10 / (22 - 3) = 53%` instead of `10 / 22 = 45%`.
 
 #### **Flexible Quarter Configuration**
 - Default: Standard calendar quarters (Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec)
-- Customizable: Define which 3 months belong to each quarter
-- Perfect for fiscal year planning and custom business cycles
-
-#### **Historical Period Analysis**
-- **Year Selection**: Choose any year with logged office days
-- **Month Selection**: Pick any month (January through December) for analysis
-- **Quarter Selection**: Select Q1, Q2, Q3, or Q4 for quarterly insights
-- **Working Days Calculation**: Accurate Monday-Friday counting for any period
-- **Attendance Percentage**: Real-time calculation of (Office Days / Working Days) × 100%
+- Customizable: Define which months belong to each quarter
+- Supports non-contiguous months (e.g., Q4: Nov, Dec, Jan for fiscal years)
 
 ## 📸 Screenshots
 
@@ -151,21 +148,17 @@ The screenshots demonstrate:
 
 ## 🏗️ Development Story
 
-Built as a fun weekend project using React Native, Expo, and Cursor AI assistance. The result? A fully-featured office tracking app with **comprehensive statistics and historical analysis** completed in just a few hours of focused coding - demonstrating how AI tooling can amplify human creativity and productivity! 🚀
+Started as a weekend project built with Cursor AI. Later revived and extended with Claude Code — adding the theme system, time off tracking, notification reminders, and comprehensive test coverage (196 tests). A good example of iterating on an AI-assisted codebase across different tools.
 
 ## 📱 Manual Testing
 
-**Core Features**: Log office days → Check calendar integration → Test date picker navigation → View past events → **Test Enhanced Statistics** → **Configure Quarters** → **Analyze Historical Periods** → Verify calendar highlighting
+**Core Flow**: Log office day → Log time off → Check calendar integration → View past events → Verify statistics (time off excluded) → Switch themes → Configure reminders
 
-**Edge Cases**: Test permission denial, network issues, date boundaries, duplicate logging scenarios, **quarter configuration changes**, **period type switching**
+**Edge Cases**: Permission denial, duplicate logging prevention, office day + time off conflict on same date, quarter configuration with wrap-around months, theme persistence across restarts
 
 ## 🧪 Testing
 
-**Coverage**: Comprehensive test suite with 54 passing tests
-- **CalendarService**: 100% coverage (initialization, permissions, event management)
-- **MainScreen**: Full coverage (UI interactions, date handling, statistics)
-- **StatisticsService**: 100% coverage (period calculations, quarter configuration, working days)
-- **Enhanced Statistics**: Complete test coverage for new features
+**Coverage**: 196 passing tests across 10 test suites
 
 ```bash
 npm test                    # Run all tests
@@ -173,27 +166,28 @@ npm run test:coverage      # Coverage report
 ```
 
 ### Test Coverage Areas
-- **Core Functionality**: Calendar integration, event management, date handling
-- **Statistics Calculations**: Working days, office days, attendance percentages
-- **Period Analysis**: Month, quarter, and year statistics
-- **Quarter Configuration**: Custom quarter definitions and validation
-- **UI Interactions**: Period type selection, year/month/quarter pickers
-- **Data Consistency**: UTC handling, timezone conversions, date filtering
+- **StatisticsService** (31 tests): Working days, month/quarter/year stats, time off subtraction, custom quarter configs, non-contiguous month handling, custom date ranges
+- **MainScreen** (24 tests): Date logging, past event retrieval, calendar highlighting, date validation, data consistency, UTC handling
+- **StatisticsScreen** (25 tests): Period type switching, year/month/quarter selection, time off display, stat card rendering, quarter configuration
+- **PastOfficeDaysScreen** (19 tests): Event display, deletion, time off entries, date formatting, edge cases
+- **SettingsScreen** (47 tests): Theme selection, notification toggle, time picker, day selection
+- **NotificationService** (22 tests): Permissions, preferences, scheduling, time formatting
+- **Theme system** (60 tests): Theme definitions, context provider, persistence, error recovery
+- **MonthStats** (2 tests): Integration tests for monthly statistics via MainScreen
 
 ## 🛠️ Tech Stack
 
-**Core**: React Native, Expo SDK 53, TypeScript, Expo Calendar, Jest + Testing Library
+**Core**: React Native 0.81, Expo SDK 54, TypeScript 5.9, React 19.1
 
-**Architecture**: Single-screen app with modal navigation, custom calendar widget, **comprehensive statistics service**, and extensive test suite
+**Storage**: expo-calendar (events), AsyncStorage (preferences), expo-notifications (reminders)
 
-**New Components**: 
-- **StatisticsService**: Centralized statistics calculation engine
-- **Enhanced UI Components**: Period selection, quarter configuration, historical analysis
-- **Advanced Date Handling**: UTC consistency, working days calculation, period filtering
+**Testing**: Jest 29, @testing-library/react-native 12 (196 tests)
+
+**Architecture**: Single-screen app with state-based navigation, custom calendar widget, theme system (light/dark/sand), statistics service with time off support
 
 ## 🔮 Future Enhancements
 
-Location-based logging • Team analytics • Custom categories • Export reports • Offline support • **Advanced Analytics Dashboard** • **Custom Period Definitions** • **Data Visualization Charts**
+Location-based logging • Team analytics • Custom categories • Export reports • Data visualization charts
 
 ## 🤝 Contributing
 
@@ -211,4 +205,4 @@ Office Days is a free, offline application. All data is stored locally on your d
 
 ---
 
-**Built with ❤️ using Cursor AI** - This project demonstrates the power of combining human creativity with AI assistance for rapid, high-quality development. What will you build next? 🚀
+**Built with ❤️ using AI-assisted development** (Cursor + Claude Code)

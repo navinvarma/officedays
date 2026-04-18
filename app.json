@@ -4,7 +4,7 @@
     "slug": "officedays",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "notification": {
       "icon": "./assets/notification-icon.png"
@@ -49,7 +49,8 @@
         {
           "calendarPermission": "Allow Office Days to access your calendar to log office days."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

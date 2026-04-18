@@ -7,6 +7,8 @@ import {
     Alert,
     FlatList,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, Theme } from '../theme';
 
 interface OfficeDayEvent {
     id: string;
@@ -17,11 +19,18 @@ interface OfficeDayEvent {
 
 interface PastOfficeDaysScreenProps {
     pastOfficeDays: OfficeDayEvent[];
+    pastTimeOffDays: OfficeDayEvent[];
     onBack: () => void;
     onDeleteOfficeDay: (eventId: string, eventDate: Date) => void;
 }
 
-export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteOfficeDay }: PastOfficeDaysScreenProps) {
+export default function PastOfficeDaysScreen({ pastOfficeDays, pastTimeOffDays, onBack, onDeleteOfficeDay }: PastOfficeDaysScreenProps) {
+    const { theme } = useTheme();
+    const styles = createStyles(theme);
+
+    const allEvents = [...pastOfficeDays, ...pastTimeOffDays]
+        .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('en-US', {
             weekday: 'short',
@@ -31,7 +40,6 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteO
         });
     };
 
-    // Function to check if a date is a duplicate
     const isDuplicate = (date: Date, index: number) => {
         const dateString = date.toDateString();
         return pastOfficeDays.findIndex((event, i) =>
@@ -40,26 +48,29 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteO
     };
 
     const renderEventItem = ({ item, index }: { item: OfficeDayEvent; index: number }) => {
-        const isDuplicateEntry = isDuplicate(item.startDate, index);
+        const isTimeOff = item.title === 'Time Off';
+        const isDuplicateEntry = !isTimeOff && isDuplicate(item.startDate, index);
+        const deleteLabel = isTimeOff ? 'time off' : 'office day';
 
         return (
             <View style={[
                 styles.eventItem,
+                isTimeOff && styles.timeOffEventItem,
                 isDuplicateEntry && styles.duplicateEventItem
             ]}>
                 <View style={styles.eventInfo}>
                     <Text style={styles.eventDate}>{formatDate(item.startDate)}</Text>
-                    <Text style={styles.eventTitle}>{item.title}</Text>
+                    <Text style={[styles.eventTitle, isTimeOff && styles.timeOffTitle]}>{item.title}</Text>
                     {isDuplicateEntry && (
-                        <Text style={styles.duplicateWarning}>⚠️ Duplicate Entry</Text>
+                        <Text style={styles.duplicateWarning}>Duplicate Entry</Text>
                     )}
                 </View>
                 <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={() => {
                         Alert.alert(
-                            'Delete Office Day',
-                            `Are you sure you want to delete the office day for ${formatDate(item.startDate)}?`,
+                            `Delete ${item.title}`,
+                            `Are you sure you want to delete the ${deleteLabel} for ${formatDate(item.startDate)}?`,
                             [
                                 { text: 'Cancel', style: 'cancel' },
                                 { text: 'Delete', style: 'destructive', onPress: () => onDeleteOfficeDay(item.id, item.startDate) }
@@ -67,7 +78,10 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteO
                         );
                     }}
                 >
-                    <Text style={styles.deleteButtonText}>🗑️</Text>
+                    <View style={styles.deleteButtonRow}>
+                        <Ionicons name="trash-outline" size={14} color={theme.colors.danger} />
+                        <Text style={styles.deleteButtonText}>Delete</Text>
+                    </View>
                 </TouchableOpacity>
             </View>
         );
@@ -75,26 +89,28 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteO
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={onBack}>
-                    <Text style={styles.backButtonText}>← Back</Text>
+                    <View style={styles.backButtonRow}>
+                        <Ionicons name="chevron-back" size={18} color={theme.colors.primary} />
+                        <Text style={styles.backButtonText}>Back</Text>
+                    </View>
                 </TouchableOpacity>
-                <Text style={styles.title}>📅 Past Office Days</Text>
+                <Text style={styles.title}>Past Events</Text>
                 <View style={styles.placeholder} />
             </View>
 
             <View style={styles.content}>
                 <Text style={styles.deleteInstructionText}>
-                    Tap the 🗑️ button to delete an office day
+                    Tap Delete to remove an entry
                 </Text>
 
                 <FlatList
-                    data={pastOfficeDays}
+                    data={allEvents}
                     keyExtractor={(item) => item.id}
                     renderItem={renderEventItem}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No office days logged yet</Text>
+                        <Text style={styles.emptyText}>No events logged yet</Text>
                     }
                 />
             </View>
@@ -102,112 +118,130 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, onBack, onDeleteO
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        paddingTop: 50,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    backButton: {
-        padding: 10,
-    },
-    backButtonText: {
-        fontSize: 18,
-        color: '#007AFF',
-        fontWeight: '600',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
-    },
-    placeholder: {
-        width: 60,
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-    },
-    deleteInstructionText: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
-        marginBottom: 15,
-        fontStyle: 'italic',
-    },
-    eventItem: {
-        width: '100%',
-        paddingVertical: 15,
-        paddingHorizontal: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        marginBottom: 10,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
+const createStyles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'transparent',
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    eventInfo: {
-        flex: 1,
-    },
-    eventDate: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    eventTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    deleteButton: {
-        padding: 8,
-        backgroundColor: '#ffebee',
-        borderRadius: 20,
-        marginLeft: 10,
-    },
-    deleteButtonText: {
-        fontSize: 16,
-        color: '#d32f2f',
-    },
-    emptyText: {
-        fontSize: 16,
-        color: '#999',
-        textAlign: 'center',
-        marginTop: 50,
-        fontStyle: 'italic',
-    },
-    duplicateEventItem: {
-        backgroundColor: '#ffebee', // Light red background for duplicates
-        borderColor: '#ef5350', // Red border for duplicates
-        borderWidth: 2,
-    },
-    duplicateWarning: {
-        fontSize: 12,
-        color: '#ef5350',
-        marginTop: 5,
-        fontStyle: 'italic',
-    },
-});
+        header: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            paddingTop: 50,
+            paddingBottom: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+            backgroundColor: theme.glass.surface.background,
+            borderBottomWidth: theme.glass.surface.borderWidth,
+            borderBottomColor: theme.glass.surface.borderColor,
+        },
+        backButton: {
+            padding: theme.spacing.sm,
+        },
+        backButtonRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        backButtonText: {
+            fontSize: theme.typography.sizes.callout,
+            color: theme.colors.primary,
+            fontWeight: theme.typography.weights.semibold as any,
+            fontFamily: theme.fonts.semibold,
+        },
+        title: {
+            fontSize: theme.typography.sizes.title3,
+            fontWeight: theme.typography.weights.semibold as any,
+            fontFamily: theme.fonts.semibold,
+            color: theme.colors.textPrimary,
+            textAlign: 'center',
+        },
+        placeholder: {
+            width: 50,
+        },
+        content: {
+            flex: 1,
+            paddingHorizontal: theme.spacing.lg,
+            paddingTop: theme.spacing.lg,
+        },
+        deleteInstructionText: {
+            fontSize: theme.typography.sizes.footnote,
+            fontFamily: theme.fonts.regular,
+            color: theme.colors.textSecondary,
+            textAlign: 'center',
+            marginBottom: theme.spacing.md,
+        },
+        eventItem: {
+            width: '100%',
+            paddingVertical: theme.spacing.md,
+            paddingHorizontal: theme.spacing.lg,
+            borderBottomWidth: 0,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: theme.glass.surface.background,
+            borderWidth: theme.glass.surface.borderWidth,
+            borderColor: theme.glass.surface.borderColor,
+            marginBottom: theme.spacing.sm,
+            borderRadius: theme.borderRadius.lg,
+            ...theme.shadow.sm,
+        },
+        eventInfo: {
+            flex: 1,
+        },
+        eventDate: {
+            fontSize: theme.typography.sizes.footnote,
+            fontFamily: theme.fonts.regular,
+            color: theme.colors.textSecondary,
+            marginBottom: theme.spacing.xs,
+        },
+        eventTitle: {
+            fontSize: theme.typography.sizes.callout,
+            fontWeight: theme.typography.weights.semibold as any,
+            fontFamily: theme.fonts.semibold,
+            color: theme.colors.textPrimary,
+        },
+        deleteButton: {
+            paddingVertical: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.md,
+            backgroundColor: theme.colors.dangerMuted,
+            borderRadius: theme.borderRadius.sm,
+            marginLeft: theme.spacing.sm,
+        },
+        deleteButtonRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+        },
+        deleteButtonText: {
+            fontSize: theme.typography.sizes.footnote,
+            color: theme.colors.danger,
+            fontWeight: theme.typography.weights.medium as any,
+            fontFamily: theme.fonts.medium,
+        },
+        emptyText: {
+            fontSize: theme.typography.sizes.callout,
+            fontFamily: theme.fonts.regular,
+            color: theme.colors.textTertiary,
+            textAlign: 'center',
+            marginTop: 50,
+        },
+        duplicateEventItem: {
+            backgroundColor: theme.colors.dangerMuted,
+            borderColor: theme.colors.danger,
+            borderWidth: 2,
+        },
+        duplicateWarning: {
+            fontSize: theme.typography.sizes.caption,
+            fontFamily: theme.fonts.regular,
+            color: theme.colors.danger,
+            marginTop: theme.spacing.xs,
+        },
+        timeOffEventItem: {
+            backgroundColor: theme.colors.warningMuted,
+            borderColor: theme.colors.warning,
+        },
+        timeOffTitle: {
+            color: theme.colors.warning,
+        },
+    });

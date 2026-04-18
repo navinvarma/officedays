@@ -13,6 +13,7 @@ export interface CalendarEvent {
 export interface PeriodStats {
     workingDays: number;
     officeDays: number;
+    timeOffDays: number;
     percentage: number;
     period: string;
 }
@@ -32,6 +33,30 @@ export interface StatisticsPeriod {
 }
 
 // Notification-related types
+export interface NotificationPreferences {
+    enabled: boolean;
+    hour: number;
+    minute: number;
+    days: number[]; // 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat
+}
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+    enabled: false,
+    hour: 17,
+    minute: 0,
+    days: [2, 3, 4, 5, 6], // Mon-Fri
+};
+
+export const WEEKDAY_LABELS: { value: number; short: string; long: string }[] = [
+    { value: 2, short: 'Mon', long: 'Monday' },
+    { value: 3, short: 'Tue', long: 'Tuesday' },
+    { value: 4, short: 'Wed', long: 'Wednesday' },
+    { value: 5, short: 'Thu', long: 'Thursday' },
+    { value: 6, short: 'Fri', long: 'Friday' },
+    { value: 7, short: 'Sat', long: 'Saturday' },
+    { value: 1, short: 'Sun', long: 'Sunday' },
+];
+
 export interface NotificationData {
     type: 'office-reminder' | 'other';
     [key: string]: any;

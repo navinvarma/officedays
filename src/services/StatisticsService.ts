@@ -50,7 +50,7 @@ export class StatisticsService {
     /**
      * Calculate statistics for a specific month
      */
-    static calculateMonthStats(year: number, month: number, officeDays: Date[]): PeriodStats {
+    static calculateMonthStats(year: number, month: number, officeDays: Date[], timeOffDays: Date[] = []): PeriodStats {
         const startDate = new Date(year, month, 1);
         const endDate = new Date(year, month + 1, 0); // Last day of month
 
@@ -62,11 +62,18 @@ export class StatisticsService {
             return date.getUTCFullYear() === year && date.getUTCMonth() === month;
         }).length;
 
-        const percentage = workingDays > 0 ? Math.round((officeDaysInMonth / workingDays) * 100) : 0;
+        // Count time off days in this month
+        const timeOffDaysInMonth = timeOffDays.filter(date => {
+            return date.getUTCFullYear() === year && date.getUTCMonth() === month;
+        }).length;
+
+        const effectiveWorkingDays = workingDays - timeOffDaysInMonth;
+        const percentage = effectiveWorkingDays > 0 ? Math.round((officeDaysInMonth / effectiveWorkingDays) * 100) : 0;
 
         return {
             workingDays,
             officeDays: officeDaysInMonth,
+            timeOffDays: timeOffDaysInMonth,
             percentage,
             period: startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         };
@@ -75,7 +82,7 @@ export class StatisticsService {
     /**
      * Calculate statistics for a specific quarter
      */
-    static calculateQuarterStats(year: number, quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', officeDays: Date[]): PeriodStats {
+    static calculateQuarterStats(year: number, quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', officeDays: Date[], timeOffDays: Date[] = []): PeriodStats {
         const config = this.getQuarterConfig();
         const months = config[quarter];
 
@@ -83,10 +90,14 @@ export class StatisticsService {
             throw new Error(`Invalid quarter: ${quarter}`);
         }
 
-        const startDate = new Date(year, Math.min(...months), 1);
-        const endDate = new Date(year, Math.max(...months) + 1, 0); // Last day of last month in quarter
-
-        const workingDays = this.calculateWorkingDays(startDate, endDate);
+        // Sum working days per month individually to handle non-contiguous months
+        // (e.g., Q4 = [10, 11, 0] wrapping Nov, Dec, Jan)
+        let workingDays = 0;
+        for (const month of months) {
+            const monthStart = new Date(year, month, 1);
+            const monthEnd = new Date(year, month + 1, 0);
+            workingDays += this.calculateWorkingDays(monthStart, monthEnd);
+        }
 
         // Count office days in this quarter
         const officeDaysInQuarter = officeDays.filter(date => {
@@ -94,11 +105,18 @@ export class StatisticsService {
             return date.getUTCFullYear() === year && months.includes(date.getUTCMonth());
         }).length;
 
-        const percentage = workingDays > 0 ? Math.round((officeDaysInQuarter / workingDays) * 100) : 0;
+        // Count time off days in this quarter
+        const timeOffDaysInQuarter = timeOffDays.filter(date => {
+            return date.getUTCFullYear() === year && months.includes(date.getUTCMonth());
+        }).length;
+
+        const effectiveWorkingDays = workingDays - timeOffDaysInQuarter;
+        const percentage = effectiveWorkingDays > 0 ? Math.round((officeDaysInQuarter / effectiveWorkingDays) * 100) : 0;
 
         return {
             workingDays,
             officeDays: officeDaysInQuarter,
+            timeOffDays: timeOffDaysInQuarter,
             percentage,
             period: `${quarter} ${year}`
         };
@@ -107,7 +125,7 @@ export class StatisticsService {
     /**
      * Calculate statistics for a specific year
      */
-    static calculateYearStats(year: number, officeDays: Date[]): PeriodStats {
+    static calculateYearStats(year: number, officeDays: Date[], timeOffDays: Date[] = []): PeriodStats {
         const startDate = new Date(year, 0, 1); // January 1st
         const endDate = new Date(year, 11, 31); // December 31st
 
@@ -119,11 +137,18 @@ export class StatisticsService {
             return date.getUTCFullYear() === year;
         }).length;
 
-        const percentage = workingDays > 0 ? Math.round((officeDaysInYear / workingDays) * 100) : 0;
+        // Count time off days in this year
+        const timeOffDaysInYear = timeOffDays.filter(date => {
+            return date.getUTCFullYear() === year;
+        }).length;
+
+        const effectiveWorkingDays = workingDays - timeOffDaysInYear;
+        const percentage = effectiveWorkingDays > 0 ? Math.round((officeDaysInYear / effectiveWorkingDays) * 100) : 0;
 
         return {
             workingDays,
             officeDays: officeDaysInYear,
+            timeOffDays: timeOffDaysInYear,
             percentage,
             period: year.toString()
         };
@@ -174,7 +199,7 @@ export class StatisticsService {
     /**
      * Calculate statistics for a custom date range
      */
-    static calculateCustomPeriodStats(startDate: Date, endDate: Date, officeDays: Date[]): PeriodStats {
+    static calculateCustomPeriodStats(startDate: Date, endDate: Date, officeDays: Date[], timeOffDays: Date[] = []): PeriodStats {
         const workingDays = this.calculateWorkingDays(startDate, endDate);
 
         // Count office days in this range
@@ -182,13 +207,20 @@ export class StatisticsService {
             return date >= startDate && date <= endDate;
         }).length;
 
-        const percentage = workingDays > 0 ? Math.round((officeDaysInRange / workingDays) * 100) : 0;
+        // Count time off days in this range
+        const timeOffDaysInRange = timeOffDays.filter(date => {
+            return date >= startDate && date <= endDate;
+        }).length;
+
+        const effectiveWorkingDays = workingDays - timeOffDaysInRange;
+        const percentage = effectiveWorkingDays > 0 ? Math.round((officeDaysInRange / effectiveWorkingDays) * 100) : 0;
 
         const period = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
         return {
             workingDays,
             officeDays: officeDaysInRange,
+            timeOffDays: timeOffDaysInRange,
             percentage,
             period
         };

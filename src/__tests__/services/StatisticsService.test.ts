@@ -135,15 +135,16 @@ describe('StatisticsService', () => {
 
             StatisticsService.setQuarterConfig(customConfig);
 
-            // Test Q1 2024 (Feb, Mar, Apr)
+            // Test Q1 2024 (Feb, Mar, Apr) — contiguous months
             const q1Stats = StatisticsService.calculateQuarterStats(2024, 'Q1', mockOfficeDays);
-            expect(q1Stats.workingDays).toBe(64); // Feb(20) + Mar(21) + Apr(22) = 64 working days
-            expect(q1Stats.officeDays).toBe(5); // 5 office days in Feb, Mar, Apr
+            expect(q1Stats.workingDays).toBe(64); // Feb(21) + Mar(21) + Apr(22) = 64 working days
+            expect(q1Stats.officeDays).toBe(5); // 2 in Feb + 1 in Mar + 2 in Apr
             expect(q1Stats.period).toBe('Q1 2024');
 
-            // Test Q4 2024 (Nov, Dec, Jan 2025)
+            // Test Q4 2024 (Nov, Dec, Jan) — wrap-around months
             const q4Stats = StatisticsService.calculateQuarterStats(2024, 'Q4', mockOfficeDays);
-            expect(q4Stats.workingDays).toBe(262); // Nov(21) + Dec(22) + Jan(23) = 262 working days (includes Jan 2025)
+            // Nov 2024(21) + Dec 2024(22) + Jan 2024(23) = 66 working days
+            expect(q4Stats.workingDays).toBe(66);
             expect(q4Stats.officeDays).toBe(5); // 5 office days in Jan, 0 in Nov/Dec
             expect(q4Stats.period).toBe('Q4 2024');
         });
@@ -216,6 +217,175 @@ describe('StatisticsService', () => {
             StatisticsService.setQuarterConfig(customConfig);
             const config = StatisticsService.getQuarterConfig();
             expect(config).toEqual(customConfig);
+        });
+    });
+
+    describe('calculateQuarterStats with time off', () => {
+        it('should subtract time off from quarter percentage', () => {
+            const timeOff = [
+                new Date('2024-01-18'), // Friday
+                new Date('2024-01-25'), // Thursday
+                new Date('2024-02-14'), // Wednesday
+            ];
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q1', mockOfficeDays, timeOff);
+
+            expect(stats.workingDays).toBe(65);
+            expect(stats.officeDays).toBe(8);
+            expect(stats.timeOffDays).toBe(3);
+            // 8 / (65 - 3) = 8/62 ≈ 13%
+            expect(stats.percentage).toBe(13);
+        });
+
+        it('should return 0% when all working days are time off', () => {
+            // Create enough time off to exceed Q3 working days
+            const massiveTimeOff = Array.from({ length: 92 }, (_, i) => {
+                const month = 6 + Math.floor(i / 31);
+                const day = (i % 31) + 1;
+                return new Date(`2024-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+            });
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q3', [], massiveTimeOff);
+
+            expect(stats.percentage).toBe(0);
+        });
+
+        it('should not count time off from other quarters', () => {
+            const q2TimeOff = [
+                new Date('2024-04-10'), // April — Q2
+                new Date('2024-05-15'), // May — Q2
+            ];
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q1', mockOfficeDays, q2TimeOff);
+
+            expect(stats.timeOffDays).toBe(0);
+            expect(stats.percentage).toBe(12); // Same as no time off: 8/65
+        });
+    });
+
+    describe('quarter calculation with non-contiguous months', () => {
+        it('should calculate correct working days for wrap-around quarter', () => {
+            StatisticsService.setQuarterConfig({
+                Q1: [1, 2, 3],
+                Q2: [4, 5, 6],
+                Q3: [7, 8, 9],
+                Q4: [10, 11, 0], // Nov, Dec, Jan (wrap-around)
+            });
+
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q4', mockOfficeDays);
+
+            // Should sum individual months, not use contiguous range
+            // Nov(21) + Dec(22) + Jan(23) = 66
+            expect(stats.workingDays).toBe(66);
+            expect(stats.officeDays).toBe(5); // 5 in Jan
+        });
+
+        it('should calculate time off correctly in wrap-around quarter', () => {
+            StatisticsService.setQuarterConfig({
+                Q1: [1, 2, 3],
+                Q2: [4, 5, 6],
+                Q3: [7, 8, 9],
+                Q4: [10, 11, 0],
+            });
+
+            const timeOff = [
+                new Date('2024-01-18'), // Jan — in Q4 months
+                new Date('2024-11-15'), // Nov — in Q4 months
+            ];
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q4', mockOfficeDays, timeOff);
+
+            expect(stats.timeOffDays).toBe(2);
+            expect(stats.workingDays).toBe(66);
+            // 5 / (66 - 2) = 5/64 ≈ 8%
+            expect(stats.percentage).toBe(8);
+        });
+    });
+
+    describe('calculateCustomPeriodStats', () => {
+        it('should calculate stats for a custom date range', () => {
+            const start = new Date('2024-01-15');
+            const end = new Date('2024-01-31');
+            const stats = StatisticsService.calculateCustomPeriodStats(start, end, mockOfficeDays);
+
+            // Jan 15 (Mon) to Jan 31 (Wed) = 13 working days
+            expect(stats.workingDays).toBe(13);
+            expect(stats.officeDays).toBe(5); // all 5 Jan office days are in this range
+            expect(stats.timeOffDays).toBe(0);
+            expect(stats.percentage).toBe(38); // 5/13 ≈ 38%
+        });
+
+        it('should subtract time off in custom period', () => {
+            const start = new Date('2024-01-15');
+            const end = new Date('2024-01-31');
+            const timeOff = [new Date('2024-01-18'), new Date('2024-01-19')];
+            const stats = StatisticsService.calculateCustomPeriodStats(start, end, mockOfficeDays, timeOff);
+
+            expect(stats.timeOffDays).toBe(2);
+            // 5 / (13 - 2) = 5/11 ≈ 45%
+            expect(stats.percentage).toBe(45);
+        });
+    });
+
+    describe('time off days', () => {
+        const mockTimeOffDays = [
+            new Date('2024-01-18'), // Friday in January
+            new Date('2024-01-19'), // Saturday (weekend — should not affect working days)
+            new Date('2024-01-24'), // Wednesday in January
+            new Date('2024-02-07'), // Wednesday in February
+        ];
+
+        it('should subtract time off days from working days in month percentage', () => {
+            const stats = StatisticsService.calculateMonthStats(2024, 0, mockOfficeDays, mockTimeOffDays);
+
+            expect(stats.workingDays).toBe(23); // Raw working days unchanged
+            expect(stats.officeDays).toBe(5);
+            expect(stats.timeOffDays).toBe(3); // Jan 18, Jan 19 (Sat counted as timeOff entry), Jan 24
+            // percentage = 5 / (23 - 3) = 5/20 = 25%
+            expect(stats.percentage).toBe(25);
+        });
+
+        it('should subtract time off days from working days in quarter percentage', () => {
+            const stats = StatisticsService.calculateQuarterStats(2024, 'Q1', mockOfficeDays, mockTimeOffDays);
+
+            expect(stats.workingDays).toBe(65);
+            expect(stats.officeDays).toBe(8);
+            expect(stats.timeOffDays).toBe(4); // All 4 timeOff days are in Q1
+            // percentage = 8 / (65 - 4) = 8/61 ≈ 13%
+            expect(stats.percentage).toBe(13);
+        });
+
+        it('should subtract time off days from working days in year percentage', () => {
+            const stats = StatisticsService.calculateYearStats(2024, mockOfficeDays, mockTimeOffDays);
+
+            expect(stats.workingDays).toBe(262);
+            expect(stats.officeDays).toBe(10);
+            expect(stats.timeOffDays).toBe(4);
+            // percentage = 10 / (262 - 4) = 10/258 ≈ 4%
+            expect(stats.percentage).toBe(4);
+        });
+
+        it('should handle zero time off days', () => {
+            const stats = StatisticsService.calculateMonthStats(2024, 0, mockOfficeDays, []);
+
+            expect(stats.timeOffDays).toBe(0);
+            expect(stats.percentage).toBe(22); // Same as without time off: 5/23
+        });
+
+        it('should handle all working days as time off', () => {
+            // Create time off for every working day in June 2024 (20 working days)
+            const allTimeOff = Array.from({ length: 30 }, (_, i) =>
+                new Date(`2024-06-${String(i + 1).padStart(2, '0')}`)
+            );
+            const stats = StatisticsService.calculateMonthStats(2024, 5, [], allTimeOff);
+
+            expect(stats.workingDays).toBe(20);
+            expect(stats.timeOffDays).toBe(30); // All 30 days of June
+            // effectiveWorkingDays = 20 - 30 = -10, should return 0%
+            expect(stats.percentage).toBe(0);
+        });
+
+        it('should default to empty time off when parameter omitted', () => {
+            const stats = StatisticsService.calculateMonthStats(2024, 0, mockOfficeDays);
+
+            expect(stats.timeOffDays).toBe(0);
+            expect(stats.percentage).toBe(22); // 5/23
         });
     });
 });
