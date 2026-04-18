@@ -2,6 +2,9 @@
 #
 .DS_Store
 
+# Release builds
+releases/
+
 # Xcode
 #
 build/

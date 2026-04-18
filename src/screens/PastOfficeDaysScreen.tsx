@@ -40,16 +40,17 @@ export default function PastOfficeDaysScreen({ pastOfficeDays, pastTimeOffDays, 
         });
     };
 
-    const isDuplicate = (date: Date, index: number) => {
-        const dateString = date.toDateString();
-        return pastOfficeDays.findIndex((event, i) =>
-            new Date(event.startDate).toDateString() === dateString && i !== index
-        ) !== -1;
+    const isDuplicate = (item: OfficeDayEvent) => {
+        const dateString = item.startDate.toDateString();
+        const source = item.title === 'Time Off' ? pastTimeOffDays : pastOfficeDays;
+        return source.filter(event =>
+            new Date(event.startDate).toDateString() === dateString
+        ).length > 1;
     };
 
     const renderEventItem = ({ item, index }: { item: OfficeDayEvent; index: number }) => {
         const isTimeOff = item.title === 'Time Off';
-        const isDuplicateEntry = !isTimeOff && isDuplicate(item.startDate, index);
+        const isDuplicateEntry = isDuplicate(item);
         const deleteLabel = isTimeOff ? 'time off' : 'office day';
 
         return (

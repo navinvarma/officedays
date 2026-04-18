@@ -27,7 +27,7 @@
       "icon": "./assets/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#667eea"
+        "backgroundColor": "#4CAF50"
       },
       "permissions": [
         "READ_CALENDAR",
@@ -54,8 +54,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "a432d8a8-dda0-4e52-81c4-0676df434831"
+        "projectId": "4c9fd85f-65be-4a8b-a2a7-356283602e4b"
       }
-    }
+    },
+    "owner": "navinvarma"
   }
 }

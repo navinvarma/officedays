@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,9 @@ import StatisticsScreen from './StatisticsScreen';
 import PastOfficeDaysScreen from './PastOfficeDaysScreen';
 import SettingsScreen from './SettingsScreen';
 
+const EVENT_TITLE_OFFICE_DAY = 'Office Day';
+const EVENT_TITLE_TIME_OFF = 'Time Off';
+
 interface OfficeDayEvent {
     id: string;
     title: string;
@@ -23,9 +26,48 @@ interface OfficeDayEvent {
     endDate: Date;
 }
 
+const getWritableCalendar = async (calendars: Calendar.Calendar[]) => {
+    return calendars.find(cal => cal.isPrimary)
+        || calendars.find(cal => cal.source?.isLocalAccount || cal.source?.type === 'local')
+        || calendars.find(cal => cal.accessLevel === Calendar.CalendarAccessLevel.OWNER)
+        || calendars[0]
+        || null;
+};
+
+const getUTCDayRange = (date: Date) => {
+    const startDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const endDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + 1));
+    return { startDate, endDate };
+};
+
+const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+};
+
+const formatDateShort = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+};
+
+const isDateInPast = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d < today;
+};
+
 export default function MainScreen() {
     const { theme } = useTheme();
-    const styles = createStyles(theme);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     const [isLoggedToday, setIsLoggedToday] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +81,18 @@ export default function MainScreen() {
     const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
     const [currentScreen, setCurrentScreen] = useState<'main' | 'statistics' | 'pastOfficeDays' | 'settings'>('main');
+
+    const calendarsRef = useRef<Calendar.Calendar[]>([]);
+
+    const fetchCalendars = async () => {
+        const all = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        // Use only the local device calendar for reads and writes
+        const local = all.filter(cal =>
+            cal.source?.isLocalAccount || cal.source?.type === 'local'
+        );
+        calendarsRef.current = local.length > 0 ? local : all;
+        return calendarsRef.current;
+    };
 
     useEffect(() => {
         setupApp();
@@ -56,8 +110,8 @@ export default function MainScreen() {
 
             if (calendarPermission.status === 'granted') {
                 setHasPermissions(true);
-                checkIfLoggedToday();
-                loadPastOfficeDays();
+                await fetchCalendars();
+                await Promise.all([checkIfLoggedToday(), loadPastOfficeDays()]);
             } else {
                 setHasPermissions(false);
                 setIsChecking(false);
@@ -72,26 +126,23 @@ export default function MainScreen() {
     const checkIfLoggedToday = async () => {
         try {
             setIsChecking(true);
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
+            const calendarIds = calendarsRef.current.map(cal => cal.id);
 
-            if (!defaultCalendar) {
+            if (calendarIds.length === 0) {
                 setIsLoggedToday(false);
                 return;
             }
 
-            const today = new Date();
-            const startDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-            const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 1));
+            const { startDate, endDate } = getUTCDayRange(new Date());
 
             const events = await Calendar.getEventsAsync(
-                [defaultCalendar.id],
+                calendarIds,
                 startDate,
                 endDate
             );
 
             const hasOfficeDay = events.some(event =>
-                event.title === 'Office Day' && event.allDay === true
+                event.title === EVENT_TITLE_OFFICE_DAY && event.allDay === true
             );
 
             setIsLoggedToday(hasOfficeDay);
@@ -105,17 +156,16 @@ export default function MainScreen() {
 
     const loadPastOfficeDays = async () => {
         try {
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
+            const calendarIds = calendarsRef.current.map(cal => cal.id);
 
-            if (!defaultCalendar) return;
+            if (calendarIds.length === 0) return;
 
             const endDate = new Date();
             const startDate = new Date();
             startDate.setMonth(startDate.getMonth() - 6);
 
             const events = await Calendar.getEventsAsync(
-                [defaultCalendar.id],
+                calendarIds,
                 startDate,
                 endDate
             );
@@ -158,12 +208,12 @@ export default function MainScreen() {
             const sortByDate = (a: OfficeDayEvent, b: OfficeDayEvent) => b.startDate.getTime() - a.startDate.getTime();
 
             const officeDayEvents = events
-                .filter(event => event.title === 'Office Day' && event.allDay === true)
+                .filter(event => event.title === EVENT_TITLE_OFFICE_DAY && event.allDay === true)
                 .map(mapEvent)
                 .sort(sortByDate);
 
             const timeOffEvents = events
-                .filter(event => event.title === 'Time Off' && event.allDay === true)
+                .filter(event => event.title === EVENT_TITLE_TIME_OFF && event.allDay === true)
                 .map(mapEvent)
                 .sort(sortByDate);
 
@@ -174,40 +224,25 @@ export default function MainScreen() {
         }
     };
 
+    const getExistingEventsForDate = async (date: Date) => {
+        const calendarIds = calendarsRef.current.map(cal => cal.id);
+        if (calendarIds.length === 0) throw new Error('No calendar available');
+        const { startDate, endDate } = getUTCDayRange(date);
+        return Calendar.getEventsAsync(calendarIds, startDate, endDate);
+    };
+
     const handleLogOfficeDay = async () => {
         if (!hasPermissions) {
-            Alert.alert(
-                'Permissions Required',
-                'Please grant calendar permissions to use this app.',
-                [{ text: 'OK' }]
-            );
+            Alert.alert('Permissions Required', 'Please grant calendar permissions to use this app.', [{ text: 'OK' }]);
             return;
         }
 
         try {
             setIsLoading(true);
 
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
+            const existingEvents = await getExistingEventsForDate(selectedDate);
 
-            if (!defaultCalendar) {
-                throw new Error('No calendar available');
-            }
-
-            const startDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()));
-            const endDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1));
-
-            const existingEvents = await Calendar.getEventsAsync(
-                [defaultCalendar.id],
-                startDate,
-                endDate
-            );
-
-            const hasExistingOfficeDay = existingEvents.some(event =>
-                event.title === 'Office Day' && event.allDay === true
-            );
-
-            if (hasExistingOfficeDay) {
+            if (existingEvents.some(e => e.title === EVENT_TITLE_OFFICE_DAY && e.allDay)) {
                 Alert.alert(
                     'Duplicate Entry',
                     `An office day already exists for ${formatDate(selectedDate)}. Would you like to proceed anyway?`,
@@ -231,18 +266,16 @@ export default function MainScreen() {
 
     const createOfficeDayEvent = async () => {
         try {
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
+            const calendar = await getWritableCalendar(calendarsRef.current);
 
-            if (!defaultCalendar) {
+            if (!calendar) {
                 throw new Error('No calendar available');
             }
 
-            const startDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()));
-            const endDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1));
+            const { startDate, endDate } = getUTCDayRange(selectedDate);
 
-            await Calendar.createEventAsync(defaultCalendar.id, {
-                title: 'Office Day',
+            await Calendar.createEventAsync(calendar.id, {
+                title: EVENT_TITLE_OFFICE_DAY,
                 startDate: startDate,
                 endDate: endDate,
                 allDay: true,
@@ -274,65 +307,38 @@ export default function MainScreen() {
 
     const handleLogTimeOff = async () => {
         if (!hasPermissions) {
-            Alert.alert(
-                'Permissions Required',
-                'Please grant calendar permissions to use this app.',
-                [{ text: 'OK' }]
-            );
+            Alert.alert('Permissions Required', 'Please grant calendar permissions to use this app.', [{ text: 'OK' }]);
             return;
         }
 
         try {
             setIsLoading(true);
 
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
+            const existingEvents = await getExistingEventsForDate(selectedDate);
 
-            if (!defaultCalendar) {
+            if (existingEvents.some(e => e.title === EVENT_TITLE_OFFICE_DAY && e.allDay)) {
+                Alert.alert('Conflict', `An office day already exists for ${formatDate(selectedDate)}. You cannot log both an office day and time off on the same date.`, [{ text: 'OK' }]);
+                setIsLoading(false);
+                return;
+            }
+
+            if (existingEvents.some(e => e.title === EVENT_TITLE_TIME_OFF && e.allDay)) {
+                Alert.alert('Duplicate Entry', `Time off already exists for ${formatDate(selectedDate)}.`, [{ text: 'OK' }]);
+                setIsLoading(false);
+                return;
+            }
+
+            const calendar = await getWritableCalendar(calendarsRef.current);
+            if (!calendar) {
                 throw new Error('No calendar available');
             }
 
-            const startDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()));
-            const endDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1));
+            const { startDate, endDate } = getUTCDayRange(selectedDate);
 
-            const existingEvents = await Calendar.getEventsAsync(
-                [defaultCalendar.id],
+            await Calendar.createEventAsync(calendar.id, {
+                title: EVENT_TITLE_TIME_OFF,
                 startDate,
-                endDate
-            );
-
-            const hasExistingOfficeDay = existingEvents.some(event =>
-                event.title === 'Office Day' && event.allDay === true
-            );
-
-            if (hasExistingOfficeDay) {
-                Alert.alert(
-                    'Conflict',
-                    `An office day already exists for ${formatDate(selectedDate)}. You cannot log both an office day and time off on the same date.`,
-                    [{ text: 'OK' }]
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            const hasExistingTimeOff = existingEvents.some(event =>
-                event.title === 'Time Off' && event.allDay === true
-            );
-
-            if (hasExistingTimeOff) {
-                Alert.alert(
-                    'Duplicate Entry',
-                    `Time off already exists for ${formatDate(selectedDate)}.`,
-                    [{ text: 'OK' }]
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            await Calendar.createEventAsync(defaultCalendar.id, {
-                title: 'Time Off',
-                startDate: startDate,
-                endDate: endDate,
+                endDate,
                 allDay: true,
                 timeZone: 'UTC',
                 notes: 'Logged via Office Days app',
@@ -362,13 +368,6 @@ export default function MainScreen() {
 
     const deleteOfficeDay = async (eventId: string, eventDate: Date) => {
         try {
-            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-            const defaultCalendar = calendars.find(cal => cal.isPrimary) || calendars[0];
-
-            if (!defaultCalendar) {
-                throw new Error('No calendar available');
-            }
-
             await Calendar.deleteEventAsync(eventId);
 
             await loadPastOfficeDays();
@@ -387,30 +386,6 @@ export default function MainScreen() {
             console.error('Error deleting office day:', error);
             Alert.alert('Error', 'Failed to delete office day. Please try again.', [{ text: 'OK' }]);
         }
-    };
-
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    };
-
-    const formatDateShort = (date: Date) => {
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    };
-
-    const isDateInPast = (date: Date) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        date.setHours(0, 0, 0, 0);
-        return date < today;
     };
 
     const renderCalendarDays = () => {
